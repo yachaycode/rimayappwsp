@@ -103,14 +103,37 @@ const main = async () => {
       res.status(500).send({ error: "Error interno del servidor" });
     }
   });
+  
+  const checkCountryCodePhone = () => {
+    const dictCountryCode = {
+        51: 'PE', 52: 'MX', 55: 'BR',
+        56: 'CL', 57: 'CO', 34: 'ES', 591: 'BO',
+        502: 'GT', 503: 'SV', 1: 'DO', 595: 'PY', 593: 'EC',
+        549: 'AR'
+    };
+    return Object.keys(dictCountryCode).map(Number);
+};
 
+const cellphoneStandard = (cellPhone) => {
+  cellPhone = cellPhone.replace('+', '').replace(' ', '').replace('-', '').trim();
+  const possibleCountryCode = cellPhone.substring(0, 2);
+  const countryCodes = checkCountryCodePhone();
+  
+  if (countryCodes.includes(parseInt(possibleCountryCode))) {
+      return cellPhone;
+  } else {
+      // Asumimos que es de Perú
+      return '51' + cellPhone;
+  }
+}
   // Agregar endpoint de envío de mensajes
   app.post('/send-message', async(req, res) => {
     const { number, message, mediaUrl } = req.body;
     if (!number || !message) {
         return res.status(400).json({ success: false, error: "number y message son requeridos" });
     }
-    const whatsappId = `${number}@c.us`;
+    const standardizedNumber = cellphoneStandard(number);
+    const whatsappId = `${standardizedNumber}@c.us`;
     try {
         await adapterProvider.sendText(whatsappId, message, mediaUrl);
         res.status(200).json({ success: true, message: 'Mensaje enviado' });
