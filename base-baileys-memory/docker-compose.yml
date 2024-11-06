@@ -1,0 +1,20 @@
+version: '3'
+services:
+  node_app:
+    build:
+      context: .
+      dockerfile: Dockerfile # Dockerfile de tu aplicación Node.js
+    container_name: node_app
+    ports:
+      - "4000:4000" # El puerto donde corre tu app de Node.js
+    restart: always
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile.nginx
+    container_name: nginx
+    ports:
+      - "80:80" # El puerto expuesto al mundo exterior
+    depends_on:
+      - node_app
