@@ -134,6 +134,7 @@ const cellphoneStandard = (cellPhone) => {
     }
     const standardizedNumber = cellphoneStandard(number);
     const whatsappId = `${standardizedNumber}@c.us`;
+    console.log("Enviando a:", whatsappId, 'mensaje:', message)
     try {
         await adapterProvider.sendText(whatsappId, message, mediaUrl);
         res.status(200).json({ success: true, message: 'Mensaje enviado' });
