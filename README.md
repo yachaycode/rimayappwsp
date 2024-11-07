@@ -60,3 +60,13 @@ Acceder a consola de docker
 ```sh
 sudo docker-compose exec node_app /bin/sh
 ```
+
+Reiniciar contenedor despues de hacer cambios en script de node
+```sh
+sudo docker-compose restart
+```
+
+ver log de docker
+```sh
+sudo docker-compose logs
+```
