@@ -51,10 +51,6 @@ en primer plano
 ```sh
 docker-compose up
 ```
-en segundo plano
-```sh
-docker-compose up -d
-````
 
 Acceder a consola de docker
 ```sh
@@ -66,7 +62,13 @@ Reiniciar contenedor despues de hacer cambios en script de node
 sudo docker-compose restart
 ```
 
-ver log de docker
+ver log en tiempo real
 ```sh
-sudo docker-compose logs
+sudo docker-compose -f docker-compose.yml logs -f
+```
+
+actualizar cambio total, requiere escanero de QR:
+```sh
+sudo docker-compose down -v
+sudo docker-compose up -d --build
 ```
