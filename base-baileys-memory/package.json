@@ -16,6 +16,7 @@
         "@bot-whatsapp/portal": "latest",
         "@bot-whatsapp/provider": "^0.1.38",
         "@whiskeysockets/baileys": "^6.7.9",
+        "bot-ws-plugin-openai": "^1.0.6",
         "cache-manager": "5.2.4",
         "express": "^4.21.1",
         "wa-sticker-formatter": "^1.6.0"

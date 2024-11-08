@@ -8,26 +8,20 @@ const {
   addKeyword,
 } = require("@bot-whatsapp/bot");
 
+
 const BaileysProvider = require("@bot-whatsapp/provider/baileys");
 const MockAdapter = require("@bot-whatsapp/database/mock");
+const { askChatGpt } = require('./ai/chatgpt');
+// const { init } = require("bot-ws-plugin-openai");
+
+
 
 const flowSecundario = addKeyword(['2', 'siguiente']).addAnswer(['📄 Aquí tenemos el flujo secundario'])
-
-const flowDocs = addKeyword(['doc', 'documentacion', 'documentación']).addAnswer(
-  [
-      '📄 Aquí encontras las documentación recuerda que puedes mejorarla',
-      'https://bot-whatsapp.netlify.app/',
-      '\n*2* Para siguiente paso.',
-  ],
-  null,
-  null,
-  [flowSecundario]
-)
 
 const flowTuto = addKeyword(['tutorial', 'tuto']).addAnswer(
   [
       '🙌 Aquí encontras un ejemplo rapido',
-      'https://bot-whatsapp.netlify.app/docs/example/',
+      'https://github.com/yachaycode/rimayappwsp',
       '\n*2* Para siguiente paso.',
   ],
   null,
@@ -38,9 +32,7 @@ const flowTuto = addKeyword(['tutorial', 'tuto']).addAnswer(
 const flowGracias = addKeyword(['gracias', 'grac']).addAnswer(
   [
       '🚀 Puedes aportar tu granito de arena a este proyecto',
-      '[*opencollective*] https://opencollective.com/bot-whatsapp',
-      '[*buymeacoffee*] https://www.buymeacoffee.com/leifermendez',
-      '[*patreon*] https://www.patreon.com/leifermendez',
+      '[*opencollective*] https://yachaycode.com',
       '\n*2* Para siguiente paso.',
   ],
   null,
@@ -48,29 +40,102 @@ const flowGracias = addKeyword(['gracias', 'grac']).addAnswer(
   [flowSecundario]
 )
 
-const flowDiscord = addKeyword(['discord']).addAnswer(
-  ['🤪 Únete al discord', 'https://link.codigoencasa.com/DISCORD', '\n*2* Para siguiente paso.'],
-  null,
-  null,
-  [flowSecundario]
-)
+// Modificar el flujo principal para manejar consultas
+const userContexts = new Map();
+const flowConsulta = addKeyword(['pregunta', 'consultar', 'buscar'])
+    .addAnswer(
+        '🤖 ¿En qué puedo ayudarte?',
+        { capture: true },
+        async (ctx, { flowDynamic, endFlow, gotoFlow }) => {
+            try {
+                const userId = ctx.from;
+                const question = ctx.body.trim().toLowerCase();
+                
+                // Manejar comandos especiales
+                if (question === 'salir') {
+                    userContexts.delete(userId);
+                    await flowDynamic('👋 ¡Hasta luego! Espero haber sido de ayuda.');
+                    return endFlow();
+                }
+                
+                if (question === 'nuevo') {
+                    userContexts.delete(userId);
+                    await flowDynamic('🆕 Empecemos un nuevo tema. ¿En qué puedo ayudarte?');
+                    return gotoFlow(flowConsulta);
+                }
 
+                // Gestionar contexto
+                if (!userContexts.has(userId)) {
+                    userContexts.set(userId, {
+                        messages: []
+                    });
+                }
+                const userContext = userContexts.get(userId);
+
+                // Solo mantener los últimos 4 mensajes (2 intercambios) para optimizar tokens
+                if (userContext.messages.length >= 8) {
+                    userContext.messages = userContext.messages.slice(-4);
+                }
+
+                // Agregar la pregunta actual
+                userContext.messages.push({
+                    role: 'user',
+                    content: ctx.body
+                });
+
+                // Preparar el contexto para ChatGPT
+                const contextMessages = [
+                    {
+                        role: 'system',
+                        content: 'Eres un asistente amigable y conciso. Mantén las respuestas breves pero informativas.'
+                    },
+                    ...userContext.messages
+                ];
+
+                const gptMessage = await askChatGpt(contextMessages);
+                
+                // Guardar la respuesta en el contexto
+                userContext.messages.push({
+                    role: 'assistant',
+                    content: gptMessage
+                });
+
+                await flowDynamic([
+                    gptMessage,
+                    '\n\n📝 Continúa preguntando, escribe "nuevo" para cambiar de tema o "salir" para terminar.'
+                ]);
+                
+                return gotoFlow(flowConsulta);
+            } catch (error) {
+                console.error('Error al consultar a ChatGPT:', error);
+                await flowDynamic([
+                    'Lo siento, hubo un error al procesar tu consulta.',
+                    '\n\n📝 Puedes intentar de nuevo o escribir "salir" para terminar.'
+                ]);
+                return gotoFlow(flowConsulta);
+            }
+        }
+    );
+
+
+    
 const flowPrincipal = addKeyword(['hola', 'ole', 'alo', 'hello', 'hi'])
     .addAnswer('🙌 Hola bienvenido a este *Chatbot*')
     .addAnswer(
         [
-            'te comparto los siguientes links de interes sobre el proyecto',
-            '👉 *doc* para ver la documentación',
-            '👉 *gracias*  para ver la lista de videos',
-            '👉 *discord* unirte al discord',
+            'Te comparto opciones, escribe uno de estas palabras activar el buscador:',
+            '👉 *pregunta*',
+            '👉 *consultar*',
+            '👉 *buscar*',
         ],
         null,
         null,
-        [flowDocs, flowGracias, flowTuto, flowDiscord]
+        [flowGracias, flowTuto, flowConsulta]
     );
 
 const app = express();
-app.use(express.json()); // Middleware para analizar JSON en las solicitudes
+app.use(express.json());
+
 
 const main = async () => {
   const adapterDB = new MockAdapter();
@@ -103,15 +168,37 @@ const main = async () => {
       res.status(500).send({ error: "Error interno del servidor" });
     }
   });
+
+  app.post('/send-message-bot-gpt', async (req, res) => {
+    try {
+        const { number, message } = req.body;
+        if (!number || !message) {
+            return res.status(400).json({ success: false, error: "number y message son requeridos" });
+        }
+
+        const standardizedNumber = cellphoneStandard(number);
+        const whatsappId = `${standardizedNumber}@c.us`;
+        console.log("Consulta de:", whatsappId, 'pregunta:', message);
+        
+        // Consultar a ChatGPT
+        const gptMessage = await askChatGpt(message); // Usar la función askChatGpt
+        await adapterProvider.sendText(whatsappId, gptMessage); // Enviar la respuesta al usuario
+        res.status(200).json({ success: true, message: 'Respuesta enviada', response: gptMessage });
+    } catch (error) {
+        console.error('Error al consultar a ChatGPT:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
   
-  const checkCountryCodePhone = () => {
-    const dictCountryCode = {
-        51: 'PE', 52: 'MX', 55: 'BR',
-        56: 'CL', 57: 'CO', 34: 'ES', 591: 'BO',
-        502: 'GT', 503: 'SV', 1: 'DO', 595: 'PY', 593: 'EC',
-        549: 'AR'
-    };
-    return Object.keys(dictCountryCode).map(Number);
+const checkCountryCodePhone = () => {
+  const dictCountryCode = {
+      51: 'PE', 52: 'MX', 55: 'BR',
+      56: 'CL', 57: 'CO', 34: 'ES', 591: 'BO',
+      502: 'GT', 503: 'SV', 1: 'DO', 595: 'PY', 593: 'EC',
+      549: 'AR'
+  };
+  return Object.keys(dictCountryCode).map(Number);
 };
 
 const cellphoneStandard = (cellPhone) => {
@@ -140,6 +227,26 @@ const cellphoneStandard = (cellPhone) => {
         res.status(200).json({ success: true, message: 'Mensaje enviado' });
     } catch (error) {
         console.error('Error al enviar el mensaje:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // endpoint para consultas a ChatGPT
+  app.post('/ask-chatgpt', async (req, res) => {
+    const { number, question } = req.body;
+    if (!number || !question) {
+        return res.status(400).json({ success: false, error: "number y question son requeridos" });
+    }
+    const standardizedNumber = cellphoneStandard(number);
+    const whatsappId = `${standardizedNumber}@c.us`;
+    console.log("Consulta de:", whatsappId, 'pregunta:', question);
+    
+    try {
+        const gptMessage = await askChatGpt(question); // Usar la función askChatGpt
+        await adapterProvider.sendText(whatsappId, gptMessage); // Enviar la respuesta al usuario
+        res.status(200).json({ success: true, message: 'Respuesta enviada', response: gptMessage });
+    } catch (error) {
+        console.error('Error al consultar a ChatGPT:', error);
         res.status(500).json({ success: false, error: error.message });
     }
   });
