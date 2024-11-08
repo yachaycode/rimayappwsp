@@ -78,5 +78,5 @@ sudo docker-compose logs
 
 Deplegar solo un app especifico ejem: 
 ```sh
-   docker-compose up -d node_app_rimay
+   sudo docker-compose up -d node_app_rimay
 ```
