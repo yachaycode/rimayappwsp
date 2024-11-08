@@ -18,6 +18,8 @@ services:
     container_name: node_app_rimay
     ports:
       - "4001:4001"
+    environment:
+      - PORT=4001
     restart: always
     volumes:
       - ./bot_sessions_rimay:/app_rimay/bot_sessions

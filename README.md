@@ -80,3 +80,7 @@ Deplegar solo un app especifico ejem:
 ```sh
    sudo docker-compose up -d node_app_rimay
 ```
+log de una app
+```sh
+   sudo docker-compose logs -f node_app_rimay
+```
