@@ -84,3 +84,9 @@ log de una app
 ```sh
    sudo docker-compose logs -f node_app_rimay
 ```
+
+# Detener y eliminar el contenedor de node_app_rimay
+sudo docker-compose stop node_app_rimay
+sudo docker-compose rm -f node_app_rimay
+sudo docker-compose up -d --build node_app_rimay
+sudo docker-compose logs -f node_app_rimay
