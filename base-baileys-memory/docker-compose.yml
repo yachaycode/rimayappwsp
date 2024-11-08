@@ -13,7 +13,7 @@ services:
   
   node_app_rimay:
     build:
-      context: ./app_rimay
+      context: .
       dockerfile: Dockerfile
     container_name: node_app_rimay
     ports:
