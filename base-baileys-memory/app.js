@@ -14,124 +14,90 @@ const MockAdapter = require("@bot-whatsapp/database/mock");
 const { askChatGpt } = require('./ai/chatgpt');
 // const { init } = require("bot-ws-plugin-openai");
 
-
-
-const flowSecundario = addKeyword(['2', 'siguiente']).addAnswer(['📄 Aquí tenemos el flujo secundario'])
-
-const flowTuto = addKeyword(['tutorial', 'tuto']).addAnswer(
-  [
-      '🙌 Aquí encontras un ejemplo rapido',
-      'https://github.com/yachaycode/rimayappwsp',
-      '\n*2* Para siguiente paso.',
-  ],
-  null,
-  null,
-  [flowSecundario]
-)
-
-const flowGracias = addKeyword(['gracias', 'grac']).addAnswer(
-  [
-      '🚀 Puedes aportar tu granito de arena a este proyecto',
-      '[*opencollective*] https://yachaycode.com',
-      '\n*2* Para siguiente paso.',
-  ],
-  null,
-  null,
-  [flowSecundario]
-)
-
 // Modificar el flujo principal para manejar consultas
 const userContexts = new Map();
-const flowConsulta = addKeyword(['pregunta', 'consultar', 'buscar'])
+const processMessage = async (ctx, { flowDynamic, endFlow, gotoFlow }) => {
+  try {
+      const userId = ctx.from;
+      const question = ctx.body.trim().toLowerCase();
+      
+      // Manejar comandos especiales
+      if (question === 'salir') {
+          userContexts.delete(userId);
+          await flowDynamic('👋 ¡Hasta luego! Espero haber sido de ayuda.');
+          return endFlow();
+      }
+      
+      if (question === 'nuevo') {
+          userContexts.delete(userId);
+          await flowDynamic('🆕 Empecemos un nuevo tema. ¡Adelante!');
+          return;
+      }
+
+      // Gestionar contexto
+      if (!userContexts.has(userId)) {
+          userContexts.set(userId, {
+              messages: []
+          });
+      }
+      const userContext = userContexts.get(userId);
+
+      // Solo mantener los últimos 4 mensajes para optimizar tokens
+      if (userContext.messages.length >= 8) {
+          userContext.messages = userContext.messages.slice(-4);
+      }
+
+      // Agregar la pregunta actual
+      userContext.messages.push({
+          role: 'user',
+          content: ctx.body
+      });
+
+      // Preparar el contexto para ChatGPT
+      const contextMessages = [
+          {
+              role: 'system',
+              content: 'Eres un asistente amigable y conciso. Mantén las respuestas breves pero informativas.'
+          },
+          ...userContext.messages
+      ];
+
+      const gptMessage = await askChatGpt(contextMessages);
+      
+      // Guardar la respuesta en el contexto
+      userContext.messages.push({
+          role: 'assistant',
+          content: gptMessage
+      });
+
+      await flowDynamic(gptMessage);
+      
+  } catch (error) {
+      console.error('Error al consultar a ChatGPT:', error);
+      await flowDynamic('Lo siento, hubo un error al procesar tu consulta.');
+  }
+};
+
+const welcomeFlow = addKeyword([''])
     .addAnswer(
-        '🤖 ¿En qué puedo ayudarte?',
+        [
+            '¡Estoy aquí para ayudarte con lo que necesites!, consultame..'
+        ],
         { capture: true },
-        async (ctx, { flowDynamic, endFlow, gotoFlow }) => {
-            try {
-                const userId = ctx.from;
-                const question = ctx.body.trim().toLowerCase();
-                
-                // Manejar comandos especiales
-                if (question === 'salir') {
-                    userContexts.delete(userId);
-                    await flowDynamic('👋 ¡Hasta luego! Espero haber sido de ayuda.');
-                    return endFlow();
-                }
-                
-                if (question === 'nuevo') {
-                    userContexts.delete(userId);
-                    await flowDynamic('🆕 Empecemos un nuevo tema. ¿En qué puedo ayudarte?');
-                    return gotoFlow(flowConsulta);
-                }
-
-                // Gestionar contexto
-                if (!userContexts.has(userId)) {
-                    userContexts.set(userId, {
-                        messages: []
-                    });
-                }
-                const userContext = userContexts.get(userId);
-
-                // Solo mantener los últimos 4 mensajes (2 intercambios) para optimizar tokens
-                if (userContext.messages.length >= 8) {
-                    userContext.messages = userContext.messages.slice(-4);
-                }
-
-                // Agregar la pregunta actual
-                userContext.messages.push({
-                    role: 'user',
-                    content: ctx.body
-                });
-
-                // Preparar el contexto para ChatGPT
-                const contextMessages = [
-                    {
-                        role: 'system',
-                        content: 'Eres un asistente amigable y conciso. Mantén las respuestas breves pero informativas.'
-                    },
-                    ...userContext.messages
-                ];
-
-                const gptMessage = await askChatGpt(contextMessages);
-                
-                // Guardar la respuesta en el contexto
-                userContext.messages.push({
-                    role: 'assistant',
-                    content: gptMessage
-                });
-
-                await flowDynamic([
-                    gptMessage,
-                    '\n\n📝 Continúa preguntando, escribe "nuevo" para cambiar de tema o "salir" para terminar.'
-                ]);
-                
-                return gotoFlow(flowConsulta);
-            } catch (error) {
-                console.error('Error al consultar a ChatGPT:', error);
-                await flowDynamic([
-                    'Lo siento, hubo un error al procesar tu consulta.',
-                    '\n\n📝 Puedes intentar de nuevo o escribir "salir" para terminar.'
-                ]);
-                return gotoFlow(flowConsulta);
-            }
+        async (ctx, props) => {
+            await processMessage(ctx, props);
         }
     );
 
 
-    
-const flowPrincipal = addKeyword(['hola', 'ole', 'alo', 'hello', 'hi'])
-    .addAnswer('🙌 Hola bienvenido a este *Chatbot*')
-    .addAnswer(
-        [
-            'Te comparto opciones, escribe uno de estas palabras activar el buscador:',
-            '👉 *pregunta*',
-            '👉 *consultar*',
-            '👉 *buscar*',
-        ],
-        null,
-        null,
-        [flowGracias, flowTuto, flowConsulta]
-    );
+const continuationFlow = addKeyword([''])
+  .addAction(
+      { capture: true },
+      async (ctx, props) => {
+          await processMessage(ctx, props);
+      }
+  );
+
 
 const app = express();
 app.use(express.json());
@@ -139,7 +105,7 @@ app.use(express.json());
 
 const main = async () => {
   const adapterDB = new MockAdapter();
-  const adapterFlow = createFlow([flowPrincipal]);
+  const adapterFlow = createFlow([welcomeFlow, continuationFlow]);
   const adapterProvider = createProvider(BaileysProvider);
 
   createBot({
