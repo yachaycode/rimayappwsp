@@ -10,9 +10,16 @@ const {
 
 
 const BaileysProvider = require("@bot-whatsapp/provider/baileys");
-const MockAdapter = require("@bot-whatsapp/database/mock");
+const PostgreSQLAdapter = require('@bot-whatsapp/database/postgres')
+
 const { askChatGpt } = require('./ai/chatgpt');
-// const { init } = require("bot-ws-plugin-openai");
+
+// Configuración de la base de datos PostgreSQL desde variables de entorno
+const POSTGRES_DB_HOST = process.env.POSTGRES_DB_HOST
+const POSTGRES_DB_USER = process.env.POSTGRES_DB_USER
+const POSTGRES_DB_PASSWORD = process.env.POSTGRES_DB_PASSWORD
+const POSTGRES_DB_NAME = process.env.POSTGRES_DB_NAME
+const POSTGRES_DB_PORT = process.env.POSTGRES_DB_PORT
 
 // Modificar el flujo principal para manejar consultas
 const userContexts = new Map();
@@ -104,7 +111,13 @@ app.use(express.json());
 
 
 const main = async () => {
-  const adapterDB = new MockAdapter();
+  const adapterDB = new PostgreSQLAdapter({
+      host: POSTGRES_DB_HOST,
+      user: POSTGRES_DB_USER,
+      database: POSTGRES_DB_NAME,
+      password: POSTGRES_DB_PASSWORD,
+      port: POSTGRES_DB_PORT,
+  })
   const adapterFlow = createFlow([welcomeFlow, continuationFlow]);
   const adapterProvider = createProvider(BaileysProvider);
 

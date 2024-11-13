@@ -21,6 +21,11 @@ services:
     environment:
       - PORT=4001
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - POSTGRES_DB_HOST=${POSTGRES_DB_HOST}
+      - POSTGRES_DB_USER=${POSTGRES_DB_USER}
+      - POSTGRES_DB_PASSWORD=${POSTGRES_DB_PASSWORD}
+      - POSTGRES_DB_NAME=${POSTGRES_DB_NAME}
+      - POSTGRES_DB_PORT${POSTGRES_DB_PORT}
     restart: always
     volumes:
       - ./bot_sessions_rimay:/app_rimay/bot_sessions
