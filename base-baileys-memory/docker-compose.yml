@@ -28,4 +28,4 @@ services:
       - POSTGRES_DB_PORT=${POSTGRES_DB_PORT}
     restart: always
     volumes:
-      - ./bot_sessions_rimay:/app_rimay/bot_sessions
+      - ./bot_sessions_rimay:/app/bot_sessions
