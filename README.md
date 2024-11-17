@@ -90,8 +90,11 @@ acceder al contenedor:
 sudo docker exec -it node_app_rimay /bin/sh
 ```
 
-# Detener y eliminar el contenedor de node_app_rimay
+## Detener y eliminar el contenedor de node_app_rimay
+
+```sh
 sudo docker-compose stop node_app_rimay
 sudo docker-compose rm -f node_app_rimay
 sudo docker-compose up -d --build node_app_rimay
 sudo docker-compose logs -f node_app_rimay
+```
