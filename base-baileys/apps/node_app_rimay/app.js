@@ -12,7 +12,7 @@ const {
 const BaileysProvider = require("@bot-whatsapp/provider/baileys");
 const PostgreSQLAdapter = require('@bot-whatsapp/database/postgres')
 
-const { askChatGpt } = require('../../ai/chatgpt');
+const { askChatGpt } = require('../ai/chatgpt');
 
 // Configuración de la base de datos PostgreSQL desde variables de entorno
 const POSTGRES_DB_HOST = process.env.POSTGRES_DB_HOST
