@@ -1,4 +1,5 @@
-base-baileys-memory/node_modules/
-base-baileys-memory/bot_sessions
+**/node_modules/
+**/bot_sessions/
+**/.env
 *.log
 .env

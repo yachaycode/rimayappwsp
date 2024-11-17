@@ -1,0 +1,40 @@
+version: '3'
+services:
+  node_app_tudentista: # app tudentista
+    build:
+      context: ./apps/node_app_tudentista
+      dockerfile: Dockerfile
+    container_name: node_app_tudentista
+    ports:
+      - "4000:4000"
+    restart: always
+    volumes:
+      - ./apps/node_app_tudentista/bot_sessions:/app/bot_sessions
+    env_file:
+      - ./apps/node_app_tudentista/.env
+  
+  node_app_rimay:
+    build:
+      context: ./apps/node_app_rimay
+      dockerfile: Dockerfile
+    container_name: node_app_rimay
+    ports:
+      - "4001:4001"
+    restart: always
+    volumes:
+      - ./apps/node_app_rimay/bot_sessions:/app/bot_sessions
+    env_file:
+      - ./apps/node_app_rimay/.env
+
+  node_app_herostartup:
+    build:
+      context: ./apps/node_app_herostartup
+      dockerfile: Dockerfile
+    container_name: node_app_herostartup
+    ports:
+      - "4002:4002"
+    restart: always
+    volumes:
+      - ./apps/node_app_herostartup/bot_sessions:/app/bot_sessions
+    env_file:
+      - ./apps/node_app_herostartup/.env
