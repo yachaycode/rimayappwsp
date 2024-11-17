@@ -24,7 +24,9 @@ const app = express();
 app.use(express.json());
 
 const flowPrincipal = addKeyword(['hola', 'ole', 'alo'])
-    .addAnswer('🙌 Hola bienvenido a este *canal*')
+    .addAnswer('🙌 Hola bienvenido a este *canal*', { 
+      catch: (ctx) => ctx.from !== 'bot_id'
+    });
 
 const main = async () => {
   const adapterDB = new PostgreSQLAdapter({
