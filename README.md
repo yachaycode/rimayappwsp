@@ -98,3 +98,18 @@ sudo docker-compose rm -f node_app_rimay
 sudo docker-compose up -d --build node_app_rimay
 sudo docker-compose logs -f node_app_rimay
 ```
+
+
+## Configuración de Variables de Entorno
+
+Antes de ejecutar la aplicación, asegúrate de configurar las variables de entorno necesarias. Puedes hacerlo creando un archivo `.env` en la raíz del proyecto con el siguiente contenido:
+
+```sh
+OPENAI_API_KEY=xx
+ASSISTANT_ID=xx
+POSTGRES_DB_HOST=xx
+POSTGRES_DB_USER=xx
+POSTGRES_DB_PASSWORD=xx
+POSTGRES_DB_NAME=xx
+POSTGRES_DB_PORT=5432
+```
