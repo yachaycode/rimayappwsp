@@ -10,7 +10,7 @@ npm start
 
 ---
 
-## Configuración de Variables de Entorno
+### Configuración de Variables de Entorno
 
 Antes de ejecutar la aplicación, asegúrate de configurar las variables de entorno necesarias. Puedes hacerlo creando un archivo `.env` en la raíz del proyecto con el siguiente contenido:
 - credenciales de la base de datos postgres para alamcenar usuarios y historial de conversaciones
