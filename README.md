@@ -103,6 +103,9 @@ sudo docker-compose logs -f node_app_rimay
 ## Configuración de Variables de Entorno
 
 Antes de ejecutar la aplicación, asegúrate de configurar las variables de entorno necesarias. Puedes hacerlo creando un archivo `.env` en la raíz del proyecto con el siguiente contenido:
+- credenciales de la base de datos postgres para alamcenar usuarios y historial de conversaciones
+- credencial de la api de openai:`OPENAI_API_KEY` para la inteligencia artificial
+- credencial `ASSISTANT_ID`, donde se almacena el id del asistente de openai
 
 ```sh
 OPENAI_API_KEY=xx
